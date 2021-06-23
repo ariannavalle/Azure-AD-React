@@ -34,6 +34,7 @@ var methodOverride = require('method-override');
 var passport = require('passport');
 var bunyan = require('bunyan');
 var morgan = require('morgan');
+const authRouter = require('./routes/auth.routes');
 
 var config = require('./config');
 
@@ -176,92 +177,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(__dirname + '/../../public'));
 
-//-----------------------------------------------------------------------------
-// Set up the route controller
-//
-// 1. For 'login' route and 'returnURL' route, use `passport.authenticate`.
-// This way the passport middleware can redirect the user to login page, receive
-// id_token etc from returnURL.
-//
-// 2. For the routes you want to check if user is already logged in, use
-// `ensureAuthenticated`. It checks if there is an user stored in session, if not
-// it will call `passport.authenticate` to ask for user to log in.
-//-----------------------------------------------------------------------------
-function ensureAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) { return next(); }
-  res.redirect('/login');
-};
-
-app.get('/', function(req, res) {
-  res.render('index', { user: req.user });
-});
-
-// '/account' is only available to logged in user
-app.get('/account', ensureAuthenticated, function(req, res) {
-  console.log(req.user);
-  res.render('account', { user: req.user });
-});
-
-app.get('/login',
-  function(req, res, next) {
-    passport.authenticate('azuread-openidconnect',
-      {
-        response: res,                      // required
-        resourceURL: config.resourceURL,    // optional. Provide a value if you want to specify the resource.
-        customState: 'my_state',            // optional. Provide a value if you want to provide custom state value.
-        failureRedirect: '/',
-          // tenantIdOrName: 'fee13e1a-367d-4ff6-894d-61056f851569',
-      }
-    )(req, res, next);
-  },
-  function(req, res) {
-    log.info('Login was called in the Sample');
-    res.redirect('/');
-});
-
-// 'GET returnURL'
-// `passport.authenticate` will try to authenticate the content returned in
-// query (such as authorization code). If authentication fails, user will be
-// redirected to '/' (home page); otherwise, it passes to the next middleware.
-app.get('/auth/openid/return',
-  function(req, res, next) {
-    passport.authenticate('azuread-openidconnect',
-      {
-        response: res,    // required
-        failureRedirect: '/'
-      }
-    )(req, res, next);
-  },
-  function(req, res) {
-    log.info('We received a return from AzureAD.');
-    res.redirect('/');
-  });
-
-// 'POST returnURL'
-// `passport.authenticate` will try to authenticate the content returned in
-// body (such as authorization code). If authentication fails, user will be
-// redirected to '/' (home page); otherwise, it passes to the next middleware.
-app.post('/auth/openid/return',
-  function(req, res, next) {
-    passport.authenticate('azuread-openidconnect',
-      {
-        response: res,    // required
-        failureRedirect: '/'
-      }
-    )(req, res, next);
-  },
-  function(req, res) {
-    log.info('We received a return from AzureAD.');
-    res.redirect('/');
-  });
-
-// 'logout' route, logout from passport, and destroy the session with AAD.
-app.get('/logout', function(req, res){
-  req.session.destroy(function(err) {
-    req.logOut();
-    res.redirect(config.destroySessionUrl);
-  });
-});
+app.use('/', authRouter);
 
 app.listen(3000);
 
