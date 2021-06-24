@@ -25,13 +25,18 @@ function ensureAuthenticated(req, res, next) {
 };
 
 router.get('/', function (req, res) {
-    res.render('index', {user: req.user});
+    console.log(" URL: '/' \n req.user \n\n", req.user, '$$$ end \n\n');
+});
+
+router.get('/error', function (req, res) {
+    res.json({error: 'error'});
 });
 
 // '/account' is only available to logged in user
 router.get('/account', ensureAuthenticated, function (req, res) {
-    console.log(req.user);
-    res.render('account', {user: req.user});
+    console.log("$$$ req.user.data \n\n", req.user, '$$$ end \n\n');
+
+    res.json({user: req.user});
 });
 
 router.get('/login',
@@ -41,15 +46,19 @@ router.get('/login',
                 response: res,                      // required
                 resourceURL: config.resourceURL,    // optional. Provide a value if you want to specify the resource.
                 customState: 'my_state',            // optional. Provide a value if you want to provide custom state value.
-                failureRedirect: '/',
-                // tenantIdOrName: 'fee13e1a-367d-4ff6-894d-61056f851569',
+                failureRedirect: '/error',
+            },
+            function(req, res) {
+                res.redirect('http://localhost:3000/');
             }
-        )(req, res, next);
+        )
+        // (req, res, next);
     },
     function (req, res) {
         log.info('Login was called in the Sample');
-        res.redirect('/');
-    });
+        res.redirect('http://localhost:3000/')
+    })
+
 
 // 'GET returnURL'
 // `passport.authenticate` will try to authenticate the content returned in
@@ -66,7 +75,7 @@ router.get('/auth/openid/return',
     },
     function (req, res) {
         log.info('We received a return from AzureAD.');
-        res.redirect('/');
+        res.redirect('http://localhost:3000/');
     });
 
 // 'POST returnURL'
@@ -84,7 +93,7 @@ router.post('/auth/openid/return',
     },
     function (req, res) {
         log.info('We received a return from AzureAD.');
-        res.redirect('/');
+        res.redirect('http://localhost:3000/');
     });
 
 // 'logout' route, logout from passport, and destroy the session with AAD.

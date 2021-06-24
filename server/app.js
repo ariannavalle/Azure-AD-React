@@ -34,6 +34,7 @@ var methodOverride = require('method-override');
 var passport = require('passport');
 var bunyan = require('bunyan');
 var morgan = require('morgan');
+const cors = require('cors');
 const authRouter = require('./routes/auth.routes');
 
 var config = require('./config');
@@ -154,6 +155,15 @@ app.use(morgan('dev'));
 app.use(methodOverride());
 app.use(cookieParser());
 
+//cors
+app.use(
+    cors({
+        origin:  [process.env.FRONTEND_POINT],
+        credentials: true // this needs set up on the frontend side as well
+        //                   in axios "withCredentials: true"
+    })
+);
+
 // set up session middleware
 if (config.useMongoDBSessionStore) {
   mongoose.connect(config.databaseUri);
@@ -179,5 +189,5 @@ app.use(express.static(__dirname + '/../../public'));
 
 app.use('/', authRouter);
 
-app.listen(3000);
+app.listen(4000);
 
